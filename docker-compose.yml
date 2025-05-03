@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  postgres-registro:
+    image: postgres:15
+    container_name: postgres-registro
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: registrodb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-registro:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  registro-usuario:
+    build: ./registro-usuario
+    container_name: registro-usuario
+    depends_on:
+      - postgres-registro
+    environment:
+      DB_HOST: postgres-registro
+      DB_PORT: 5432
+      DB_USER: usuario
+      DB_PASSWORD: password
+      DB_NAME: registrodb
+    networks:
+      - backend
+
+  postgres-autenticacion:
+    image: postgres:15
+    container_name: postgres-autenticacion
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: registrodb
+    ports:
+      - "5433:5433"
+    volumes:
+      - pgdata-autenticacion:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  autenticacion:
+    build: ./autenticacion
+    container_name: autenticacion
+    depends_on:
+      - postgres-autenticacion
+    environment:
+      DB_HOST: postgres-autenticacion
+      DB_PORT: 5432
+      DB_USER: usuario
+      DB_PASSWORD: password
+      DB_NAME: registrodb
+    networks:
+      - backend
+  
+  control-permisos:
+    build: ./control-permisos
+    container_name: control-permisos
+    depends_on:
+      - redis
+    networks:
+      - backend
+
+  expediente-clinico:
+    build: ./expediente-clinico
+    container_name: expediente-clinico
+    depends_on:
+      - redis
+      - control-permisos
+    ports:
+      - "3003:3003"
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - backend
+
+
+  notificaciones:
+    build: ./notificaciones
+    container_name: notificaciones
+    depends_on:
+      - redis
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-gateway
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "3000:80"
+    depends_on:
+      - registro-usuario
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  pgdata-registro:
+  pgdata-autenticacion:
+
+
+
