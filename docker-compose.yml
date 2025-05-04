@@ -86,7 +86,6 @@ services:
     networks:
       - backend
 
-
   notificaciones:
     build: ./notificaciones
     container_name: notificaciones
@@ -94,6 +93,27 @@ services:
       - redis
     networks:
       - backend
+
+  documentos-medicos:
+    build: ./documentos-medicos
+    container_name: documentos-medicos
+    ports:
+      - "3004:3004" 
+    networks:
+      - backend
+    depends_on:
+      - redis
+      - postgres-registro
+      - postgres-autenticacion
+    environment:
+      REDIS_HOST: redis
+      DB_HOST: postgres-registro 
+      DB_PORT: 5432
+      DB_USER: usuario
+      DB_PASSWORD: password
+      DB_NAME: registrodb
+    volumes:
+      - ./documentos-medicos/uploads:/app/uploads
 
   nginx:
     image: nginx:latest
