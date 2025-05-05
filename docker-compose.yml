@@ -115,6 +115,18 @@ services:
     volumes:
       - ./documentos-medicos/uploads:/app/uploads
 
+  citas-medicas:
+    build: ./citas-medicas
+    container_name: citas-medicas
+    depends_on:
+      - redis
+    ports:
+      - "3005:3005"
+    environment:
+      REDIS_HOST: redis
+    networks:
+      - backend
+
   nginx:
     image: nginx:latest
     container_name: nginx-gateway

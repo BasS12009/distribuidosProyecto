@@ -75,5 +75,5 @@ app.get('/documentos/:id', async (req, res) => {
 
 
 app.listen(port, () => {
-  console.log(`Servicio de Documentos Médicos escuchando en http://localhost:${port}`);
+  console.log(`Servicio de Documentos Médicos escuchando en ${port}`);
 });

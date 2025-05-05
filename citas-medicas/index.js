@@ -1,22 +1,14 @@
 const express = require('express');
-const { createClient } = require('redis');
-const app = express();
-const port = 3000;
+const Redis = require('ioredis');
 
-// Middleware
+const app = express();
+const port = 3005;
+
+const redis = new Redis({ host: 'redis', port: 6379 });
+
 app.use(express.json());
 
-// Cliente Redis
-const redisClient = createClient();
-
-redisClient.on('error', (err) => console.error('Redis error:', err));
-
-(async () => {
-  await redisClient.connect();
-  console.log('Conectado a Redis');
-})();
-
-// crear una nueva cita
+// Crear una nueva cita
 app.post('/citas', async (req, res) => {
   const { fecha, hora, medico, paciente } = req.body;
 
@@ -25,33 +17,45 @@ app.post('/citas', async (req, res) => {
   }
 
   const cita = { fecha, hora, medico, paciente };
-  const id = Date.now().toString(); // id único usando timestamp
+  const id = Date.now().toString();
 
   try {
-    await redisClient.hSet(`cita:${id}`, cita);
+    await redis.hset(`cita:${id}`, cita);
+
+    // Publicar evento a stream
+    await redis.xadd('cita-creada', '*',
+      'citaId', id,
+      'fecha', fecha,
+      'hora', hora,
+      'medico', medico,
+      'paciente', paciente
+    );
+    console.log(`Cita creada: ${id}`);
     res.status(201).json({ id, ...cita });
   } catch (err) {
+    console.error('Error al guardar la cita:', err);
     res.status(500).json({ error: 'Error al guardar en Redis' });
   }
 });
 
-// obtener todas las citas
+// Obtener todas las citas
 app.get('/citas', async (req, res) => {
   try {
-    const keys = await redisClient.keys('cita:*');
+    const keys = await redis.keys('cita:*');
     const citas = [];
 
     for (const key of keys) {
-      const cita = await redisClient.hGetAll(key);
+      const cita = await redis.hgetall(key);
       citas.push({ id: key.split(':')[1], ...cita });
     }
 
     res.json(citas);
   } catch (err) {
+    console.error('Error al leer citas:', err);
     res.status(500).json({ error: 'Error al leer de Redis' });
   }
 });
 
 app.listen(port, () => {
-  console.log(`API escuchando en http://localhost:${port}`);
+  console.log(`Servicio de citas escuchando en http://localhost:${port}`);
 });
