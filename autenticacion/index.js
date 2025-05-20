@@ -1,11 +1,22 @@
 const express = require('express');
 const Redis = require('ioredis');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('./models/Usuario');
 const sequelize = require('./config/db');
 const { comparePassword } = require('./utils/auth');
 
-const redis = new Redis({ host: 'redis', port: 6379 });
+const redis = new Redis({
+  host: 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false
+  }
+});
+
 const app = express();
 app.use(express.json());
 
@@ -26,6 +37,26 @@ app.post('/login', async (req, res) => {
   const token = jwt.sign({ correo }, 'secreto123', { expiresIn: '1h' });
   res.json({ token });
 });
+
+app.get('/verificador', async (req, res) => {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('falta token');
+    return res.status(401).json({ error: 'Falta Token' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const payload = jwt.verify(token, 'secreto123');
+    console.log('token válido');
+    return res.sendStatus(200);
+  } catch (error) {
+    console.log("error");
+    return res.status(401).json({ error: 'Token inválido' }); 
+  }
+});
+
 
 async function escucharEventos() {
   let lastId = '0';

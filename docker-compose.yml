@@ -2,12 +2,27 @@ version: '3.8'
 
 services:
   redis:
-    image: redis:latest
+    image: redis:7.2.4-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - "6380:6380"  
+    volumes:
+      - ./certs:/certs:ro
+    command: >
+      redis-server
+        --tls-port 6380
+        --port 0
+        --tls-cert-file /certs/redis.crt
+        --tls-key-file /certs/redis.key
+        --tls-ca-cert-file /certs/ca.crt
+        --tls-auth-clients yes
+        --save ""
+        --appendonly no
+
     networks:
       - backend
+
+
 
   postgres-registro:
     image: postgres:15
@@ -34,6 +49,8 @@ services:
       DB_USER: usuario
       DB_PASSWORD: password
       DB_NAME: registrodb
+    volumes:
+      - ./certs:/certs:ro
     networks:
       - backend
 
@@ -62,6 +79,8 @@ services:
       DB_USER: usuario
       DB_PASSWORD: password
       DB_NAME: registrodb
+    volumes:
+      - ./certs:/certs:ro
     networks:
       - backend
   
@@ -70,6 +89,8 @@ services:
     container_name: control-permisos
     depends_on:
       - redis
+    volumes:
+      - ./certs:/certs:ro
     networks:
       - backend
 
@@ -83,6 +104,8 @@ services:
       - "3003:3003"
     environment:
       REDIS_HOST: redis
+    volumes:
+      - ./certs:/certs:ro
     networks:
       - backend
 
@@ -91,6 +114,8 @@ services:
     container_name: notificaciones
     depends_on:
       - redis
+    volumes:
+      - ./certs:/certs:ro
     networks:
       - backend
 
@@ -114,6 +139,7 @@ services:
       DB_NAME: registrodb
     volumes:
       - ./documentos-medicos/uploads:/app/uploads
+      - ./certs:/certs:ro
 
   citas-medicas:
     build: ./citas-medicas
@@ -124,6 +150,8 @@ services:
       - "3005:3005"
     environment:
       REDIS_HOST: redis
+    volumes:
+    - ./certs:/certs:ro
     networks:
       - backend
 

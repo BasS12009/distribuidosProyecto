@@ -1,6 +1,16 @@
 // control-permisos.js
 const Redis = require('ioredis');
-const redis = new Redis({ host: 'redis', port: 6379 });
+const fs = require('fs');
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false // true en producción
+  }
+});
 
 // Simulación: permisos en memoria
 const permisos = new Map();

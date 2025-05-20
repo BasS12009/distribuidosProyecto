@@ -1,9 +1,21 @@
 const express = require('express');
 const { verificarPermiso } = require('./permisos');
+const fs = require('fs');
 const Redis = require('ioredis');
 
 
-const redis = new Redis({ host: 'redis', port: 6379 });
+
+const redis = new Redis({
+  host: 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false
+  },
+  retryStrategy: times => Math.min(times * 500, 2000) // reconexión automática
+});
 
 const app = express();
 app.use(express.json());

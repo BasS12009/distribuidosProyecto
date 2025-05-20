@@ -1,10 +1,20 @@
 const express = require('express');
 const Redis = require('ioredis');
+const fs = require('fs');
 
 const app = express();
 const port = 3005;
 
-const redis = new Redis({ host: 'redis', port: 6379 });
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false // true en producción
+  }
+});
 
 app.use(express.json());
 

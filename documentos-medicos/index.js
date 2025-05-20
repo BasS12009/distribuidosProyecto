@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('redis');
+const fs = require('fs');
 const { randomUUID } = require('crypto');
 const app = express();
 const port = 3004;
@@ -7,7 +8,15 @@ const port = 3004;
 app.use(express.json({ limit: '10mb' })); 
 
 const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://redis:6379'
+  socket: {
+    host: 'redis',
+    port: 6380,
+    tls: true,
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false // ponlo en true en producción si el CN es válido
+  }
 });
 
 redisClient.on('error', (err) => console.error('Redis error:', err));

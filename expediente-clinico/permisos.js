@@ -1,6 +1,17 @@
 const Redis = require('ioredis');
-const redis = new Redis({ host: 'redis', port: 6379 });
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false
+  }
+});
 
 async function verificarPermiso(expedienteId) {
     const requestId = uuidv4();

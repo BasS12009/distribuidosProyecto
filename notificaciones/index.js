@@ -1,5 +1,17 @@
+const fs = require('fs');
 const Redis = require('ioredis');
-const redis = new Redis({ host: 'redis', port: 6379 });
+
+
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false // true en producción
+  }
+});
 
 async function procesarEventos() {
   console.log('📨 Esperando eventos de solicitudes-permiso...');

@@ -1,11 +1,23 @@
 const express = require('express');
+const fs = require('fs');
 const Redis = require('ioredis');
+
 const bcrypt = require('bcrypt');
 const sequelize = require('./config/db');
 const Usuario = require('./models/Usuario');
 
 const app = express();
-const redis = new Redis({ host: 'redis', port: 6379 });
+
+const redis = new Redis({
+  host: process.env.REDIS_HOST || 'redis',
+  port: 6380,
+  tls: {
+    ca: fs.readFileSync('/certs/ca.crt'),
+    cert: fs.readFileSync('/certs/redis.crt'),
+    key: fs.readFileSync('/certs/redis.key'),
+    rejectUnauthorized: false 
+  }
+});
 
 app.use(express.json());
 
